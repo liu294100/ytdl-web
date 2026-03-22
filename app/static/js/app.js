@@ -2,6 +2,8 @@ const state = {
   settings: null,
   info: null,
   taskId: null,
+  taskStatus: "idle",
+  taskStatusText: "",
   timer: null,
   language: "zh-CN",
   playlistEntries: [],
@@ -50,6 +52,27 @@ function refreshTopStats() {
   const total = state.playlistEntries.length;
   const selected = state.selectedEntries.length;
   $("statPlaylist").textContent = `${selected}/${total}`;
+}
+
+function localizeTaskState(status) {
+  const map = {
+    idle: "statusIdle",
+    pending: "statusPending",
+    running: "statusRunning",
+    success: "statusSuccess",
+    error: "statusError",
+    cancelled: "statusCancelled"
+  };
+  const key = map[status];
+  return key ? t(key, status) : status;
+}
+
+function renderTaskStatus(status, statusText = "") {
+  state.taskStatus = status;
+  state.taskStatusText = statusText || "";
+  const localized = localizeTaskState(status);
+  $("statTask").textContent = localized;
+  $("taskStatus").textContent = state.taskStatusText ? `${localized} | ${state.taskStatusText}` : localized;
 }
 
 function selectedValue(selectId) {
@@ -135,7 +158,7 @@ async function saveSettings() {
   });
   const data = await res.json();
   if (!res.ok) {
-    toast(data.error || "save failed");
+    toast(data.error || t("saveFailed", "保存失败"));
     return;
   }
   state.settings = data;
@@ -203,7 +226,7 @@ async function fetchInfo() {
       })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "fetch failed");
+    if (!res.ok) throw new Error(data.error || t("fetchFailed", "获取失败"));
     state.info = data;
     fillSelect($("formatSelect"), data.format_options);
     fillSelect($("audioTrackSelect"), data.audio_track_options);
@@ -213,15 +236,15 @@ async function fetchInfo() {
     $("choosePlaylistBtn").disabled = !data.is_playlist;
     renderPlaylistSummary();
     const lines = [];
-    lines.push(`title: ${data.title}`);
-    lines.push(`duration: ${data.duration_text}`);
-    lines.push(`uploader: ${data.uploader}`);
-    if (data.is_playlist) lines.push(`playlist: ${data.playlist_title} (${data.entry_count})`);
+    lines.push(`${t("metaTitle", "标题")}: ${data.title}`);
+    lines.push(`${t("metaDuration", "时长")}: ${data.duration_text}`);
+    lines.push(`${t("metaUploader", "上传者")}: ${data.uploader}`);
+    if (data.is_playlist) lines.push(`${t("metaPlaylist", "合集")}: ${data.playlist_title} (${data.entry_count})`);
     $("videoMeta").textContent = lines.join("\n");
-    $("infoStatus").textContent = "ok";
+    $("infoStatus").textContent = t("statusOk", "完成");
     toast(t("infoLoaded", "信息已更新"));
   } catch (err) {
-    $("infoStatus").textContent = `error: ${err.message}`;
+    $("infoStatus").textContent = `${t("statusErrorPrefix", "错误")}: ${err.message}`;
     toast(err.message);
   }
 }
@@ -266,15 +289,15 @@ async function startDownload() {
   });
   const data = await res.json();
   if (!res.ok) {
-    toast(data.error || "task create failed");
+    toast(data.error || t("taskCreateFailed", "创建任务失败"));
     return;
   }
   state.taskId = data.task_id;
-  $("taskIdText").textContent = `task: ${state.taskId}`;
+  $("taskIdText").textContent = `${t("taskIdPrefix", "任务")}: ${state.taskId}`;
   $("cancelTaskBtn").disabled = false;
   $("openFilesBtn").disabled = true;
   $("filesWrap").innerHTML = "";
-  $("statTask").textContent = "running";
+  renderTaskStatus("running");
   openModal("taskModal");
   pollTask();
 }
@@ -335,10 +358,9 @@ async function pollTask() {
   try {
     const res = await fetch(`/api/tasks/${state.taskId}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "task fetch failed");
+    if (!res.ok) throw new Error(data.error || t("taskFetchFailed", "获取任务失败"));
     $("progressBar").style.width = `${Math.max(0, Math.min(100, Number(data.progress || 0)))}%`;
-    $("taskStatus").textContent = `${data.status} | ${data.status_text || ""}`;
-    $("statTask").textContent = data.status;
+    renderTaskStatus(data.status, data.status_text || "");
     $("logBox").textContent = (data.logs || []).join("\n");
     $("logBox").scrollTop = $("logBox").scrollHeight;
     if (["success", "error", "cancelled"].includes(data.status)) {
@@ -351,7 +373,7 @@ async function pollTask() {
     }
     state.timer = setTimeout(pollTask, 900);
   } catch (err) {
-    $("taskStatus").textContent = `poll error: ${err.message}`;
+    $("taskStatus").textContent = `${t("statusPollErrorPrefix", "轮询错误")}: ${err.message}`;
     state.timer = setTimeout(pollTask, 1500);
   }
 }
@@ -360,6 +382,7 @@ function bindEvents() {
   bind("languageSelect", "change", () => {
     state.language = $("languageSelect").value;
     applyI18n(state.language);
+    renderTaskStatus(state.taskStatus, state.taskStatusText);
   });
   bind("menuSettingsBtn", "click", () => openModal("settingsModal"));
 
@@ -421,9 +444,8 @@ async function bootstrap() {
   await loadLanguages();
   await loadSettings();
   bindEvents();
-  $("infoStatus").textContent = "ready";
-  $("taskStatus").textContent = "idle";
-  $("statTask").textContent = "idle";
+  $("infoStatus").textContent = t("statusReady", "就绪");
+  renderTaskStatus("idle");
   refreshTopStats();
 }
 
