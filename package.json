@@ -5,7 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "start:desktop": "electron .",
-    "build:backend": "python -m pip install --upgrade pyinstaller && python -m PyInstaller --noconfirm --clean --onedir --name ytdl-web-backend --add-data \"app;app\" --add-data \"data;data\" app.py",
+    "build:backend": "python -m pip install pyinstaller && python -m PyInstaller --noconfirm --clean --onedir --name ytdl-web-backend --exclude-module matplotlib --exclude-module numpy --exclude-module pandas --exclude-module scipy --add-data \"app;app\" --add-data \"data;data\" app.py",
     "dist:win": "npm run build:backend && electron-builder --win portable"
   },
   "devDependencies": {

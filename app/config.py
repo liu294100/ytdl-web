@@ -1,8 +1,12 @@
 import os
+import sys
 
 
 class Config:
-    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    DATA_DIR = os.path.join(BASE_DIR, "data")
+    if getattr(sys, "frozen", False):
+        BASE_DIR = os.path.dirname(sys.executable)
+    else:
+        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    DATA_DIR = os.getenv("YTDL_WEB_DATA_DIR", os.path.join(BASE_DIR, "data"))
     SQLITE_DB_PATH = os.path.join(DATA_DIR, "app.db")
     TASK_MAX_WORKERS = 3

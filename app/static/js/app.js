@@ -87,6 +87,10 @@ function applyI18n(lang) {
     const key = node.dataset.i18n;
     if (dict[key]) node.textContent = dict[key];
   });
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    const key = node.dataset.i18nTitle;
+    if (dict[key]) node.title = dict[key];
+  });
   document.documentElement.lang = lang;
 }
 
