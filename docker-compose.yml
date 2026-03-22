@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  ytdl-web:
+    build: .
+    container_name: ytdl-web
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./downloads:/app/downloads
+    restart: unless-stopped
