@@ -1,8 +1,11 @@
 from app import create_app
+import os
 
 
 flask_app = create_app()
 
 
 if __name__ == "__main__":
-    flask_app.run(host="0.0.0.0", port=8000, debug=False)
+    host = os.getenv("YTDL_WEB_HOST", "0.0.0.0")
+    port = int(os.getenv("YTDL_WEB_PORT", "8000"))
+    flask_app.run(host=host, port=port, debug=False)

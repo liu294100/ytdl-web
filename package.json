@@ -1,0 +1,44 @@
+{
+  "name": "ytdl-web-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "start:desktop": "electron .",
+    "build:backend": "python -m pip install --upgrade pyinstaller && python -m PyInstaller --noconfirm --clean --onedir --name ytdl-web-backend --add-data \"app;app\" --add-data \"data;data\" app.py",
+    "dist:win": "npm run build:backend && electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.ytdl.web",
+    "productName": "ytdl-web",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/ytdl-web-backend",
+        "to": "backend"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "ytdl-web-portable-${version}.${ext}"
+    }
+  }
+}
